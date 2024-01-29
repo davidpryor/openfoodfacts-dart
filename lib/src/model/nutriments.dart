@@ -1,3 +1,4 @@
+import '../../openfoodfacts.dart';
 import 'nutrient.dart';
 import 'per_size.dart';
 import '../interface/json_object.dart';
@@ -35,6 +36,7 @@ class Nutriments extends JsonObject {
   /// It is useful to store null values: this way we can make the difference
   /// between totally unknown values and values that have been erased.
   final Map<String, double?> _map = <String, double?>{};
+  final Map<String, String> _unitMap = <String, String>{};
 
   /// Returns the map key for that [nutrient] and that [perSize].
   String _getTag(
@@ -42,6 +44,9 @@ class Nutriments extends JsonObject {
     final PerSize perSize,
   ) =>
       '${nutrient.offTag}_${perSize.offTag}';
+
+  /// Returns the map key for that [nutrient] unit.
+  String _getUnitTag(final Nutrient nutrient) => '${nutrient.offTag}_unit';
 
   /// Returns the value in grams of that [nutrient] for that [perSize].
   ///
@@ -55,9 +60,12 @@ class Nutriments extends JsonObject {
   Nutriments setValue(
     final Nutrient nutrient,
     final PerSize perSize,
-    final double? value,
-  ) {
+    final double? value, {
+    final Unit? unit = null,
+  }) {
+    final Unit finalUnit = unit ?? nutrient.typicalUnit;
     _map[_getTag(nutrient, perSize)] = value;
+    _unitMap[_getUnitTag(nutrient)] = finalUnit.offValue;
     return this;
   }
 
@@ -114,6 +122,10 @@ class Nutriments extends JsonObject {
           result[tag] = value;
         } else if (_map.containsKey(tag)) {
           result[tag] = '';
+        }
+        final String? unit = _unitMap[_getUnitTag(nutrient)];
+        if (unit != null) {
+          result[_getUnitTag(nutrient)] = unit;
         }
       }
     }

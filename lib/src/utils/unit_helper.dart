@@ -1,5 +1,18 @@
 /// Unit of measurement for nutrients
-enum Unit { KCAL, KJ, G, MILLI_G, MICRO_G, MILLI_L, L, PERCENT, UNKNOWN }
+enum Unit {
+  KCAL(offValue: 'kcal'),
+  KJ(offValue: 'kj'),
+  G(offValue: 'g'),
+  MILLI_G(offValue: 'mg'),
+  MICRO_G(offValue: 'mcg'),
+  MILLI_L(offValue: 'ml'),
+  L(offValue: 'liter'),
+  PERCENT(offValue: 'percent'),
+  UNKNOWN(offValue: '');
+
+  final String offValue;
+  const Unit({required String this.offValue});
+}
 
 /// Helper class for conversions to/from [Unit]
 class UnitHelper {
@@ -36,20 +49,14 @@ class UnitHelper {
     'μg': Unit.MICRO_G,
   };
 
-  /// Maps a [Unit] to a unit spelling recognised by the write API
-  static const _POSSIBLE_SPELLINGS = {
-    Unit.KCAL: 'kcal',
-    Unit.KJ: 'kj',
-    Unit.G: 'g',
-    Unit.MILLI_G: 'mg',
-    Unit.MICRO_G: 'mcg',
-    Unit.MILLI_L: 'ml',
-    Unit.L: 'liter',
-    Unit.PERCENT: 'percent',
-  };
-
   /// Returns a unit spelling corresponding to the type of [unit]
-  static String? unitToString(Unit? unit) => _POSSIBLE_SPELLINGS[unit];
+  static String? unitToString(Unit? unit) {
+    if (unit == null || unit == Unit.UNKNOWN) {
+      return null;
+    } else {
+      return unit.offValue;
+    }
+  }
 
   /// Returns the [Unit] described by [s]
   static Unit? stringToUnit(String? s) {
