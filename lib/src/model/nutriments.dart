@@ -61,7 +61,7 @@ class Nutriments extends JsonObject {
     final Nutrient nutrient,
     final PerSize perSize,
     final double? value, {
-    final Unit? unit = null,
+    final Unit? unit,
   }) {
     final Unit finalUnit = unit ?? nutrient.typicalUnit;
     _map[_getTag(nutrient, perSize)] = value;

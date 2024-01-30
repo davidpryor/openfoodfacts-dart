@@ -398,6 +398,98 @@ Like that:
       }
     }, skip: 'Works randomly');
 
+    double? amountInGramsTo(double? amount, Unit unit) {
+      final localAmount = amount;
+      if (localAmount == null) {
+        return null;
+      }
+      switch (unit) {
+        case Unit.G:
+          return localAmount;
+        case Unit.MILLI_G:
+          return localAmount / 1000;
+        case Unit.MICRO_G:
+          return localAmount / 1000000;
+        default:
+          return localAmount;
+      }
+    }
+
+    test('Can send _unit to server', () async {
+      const User USER = TestConstants.TEST_USER;
+      const double ENERGY = 365;
+      const double CARBOHYDRATES = 15;
+      const double PROTEINS = 6;
+      const double FAT = 0.1;
+      const double VITAMIN_B12 = 2;
+      const String BARCODE = '7340011364184';
+      const String PRODUCT_NAME = 'Chili beans';
+      final String nutrimentDataPer = PerSize.oneHundredGrams.offTag;
+
+      const PerSize perSize = PerSize.oneHundredGrams;
+      final Nutriments nutriments = Nutriments.empty()
+        ..setValue(Nutrient.energyKJ, perSize, ENERGY)
+        ..setValue(Nutrient.carbohydrates, perSize, (CARBOHYDRATES))
+        ..setValue(Nutrient.proteins, perSize, PROTEINS)
+        ..setValue(Nutrient.vitaminB12, perSize, VITAMIN_B12)
+        ..setValue(Nutrient.fat, perSize, FAT);
+
+      final Product newProduct = Product(
+        barcode: BARCODE,
+        productName: PRODUCT_NAME,
+        nutrimentDataPer: nutrimentDataPer,
+        nutriments: nutriments,
+      );
+
+      final Status status = await OpenFoodAPIClient.saveProduct(
+        USER,
+        newProduct,
+        uriHelper: uriHelper,
+      );
+
+      expect(status.status, 1);
+      expect(status.statusVerbose, 'fields saved');
+
+      final ProductResultV3 result = await OpenFoodAPIClient.getProductV3(
+        ProductQueryConfiguration(
+          BARCODE,
+          language: OpenFoodFactsLanguage.ENGLISH,
+          version: ProductQueryVersion.v3,
+        ),
+        user: USER,
+        uriHelper: uriHelper,
+      );
+
+      expect(result.status, ProductResultV3.statusSuccess);
+      expect(result.barcode, BARCODE);
+      final Product? searchedProduct = result.product;
+      expect(searchedProduct != null, true);
+      if (searchedProduct != null) {
+        expect(searchedProduct.barcode, BARCODE);
+        expect(searchedProduct.productName, PRODUCT_NAME);
+        expect(searchedProduct.nutrimentDataPer, nutrimentDataPer);
+        var searchedNutriments = searchedProduct.nutriments;
+        expect(searchedNutriments, isNotNull);
+        if (searchedNutriments != null) {
+          final List<Nutrient> nutrients = <Nutrient>[
+            Nutrient.energyKJ,
+            Nutrient.carbohydrates,
+            Nutrient.proteins,
+            Nutrient.fat,
+            Nutrient.vitaminB12,
+          ];
+          for (final Nutrient nutrient in nutrients) {
+            expect(
+              searchedNutriments.getValue(nutrient, perSize),
+              amountInGramsTo(
+                  nutriments.getValue(nutrient, perSize), nutrient.typicalUnit),
+              reason: 'should be the same values for $nutrient',
+            );
+          }
+        }
+      }
+    });
+
     String generateRandomString(int len) {
       var r = Random();
       return String.fromCharCodes(
